@@ -10,7 +10,7 @@ from openlineage.airflow.facets import (
     UnknownOperatorAttributeRunFacet,
     UnknownOperatorInstance,
 )
-from openlineage.client.facet import SourceCodeJobFacet
+from openlineage.client.facet_v2 import source_code_job
 
 
 class PythonExtractor(BaseExtractor):
@@ -35,7 +35,7 @@ class PythonExtractor(BaseExtractor):
         job_facet: Dict = {}
         if collect_source and source_code:
             job_facet = {
-                "sourceCode": SourceCodeJobFacet(
+                "sourceCode": source_code_job.SourceCodeJobFacet(
                     "python",
                     # We're on worker and should have access to DAG files
                     source_code,

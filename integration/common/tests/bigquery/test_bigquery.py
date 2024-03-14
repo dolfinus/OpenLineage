@@ -4,7 +4,7 @@
 import json
 from unittest.mock import MagicMock
 
-from openlineage.client.facet import ExternalQueryRunFacet
+from openlineage.client.facet_v2 import external_query_run
 from openlineage.common.dataset import Dataset, Field, Source
 from openlineage.common.provider.bigquery import (
     BigQueryDatasetsProvider,
@@ -43,7 +43,9 @@ def test_bq_job_information():
         "bigQuery_job": BigQueryJobRunFacet(
             cached=False, billedBytes=111149056, properties=json.dumps(job_details)
         ),
-        "externalQuery": ExternalQueryRunFacet(externalQueryId="job_id", source="bigquery"),
+        "externalQuery": external_query_run.ExternalQueryRunFacet(
+            externalQueryId="job_id", source="bigquery"
+        ),
     }
     assert statistics.inputs == [
         Dataset(

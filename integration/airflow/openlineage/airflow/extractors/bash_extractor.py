@@ -9,7 +9,7 @@ from openlineage.airflow.facets import (
     UnknownOperatorAttributeRunFacet,
     UnknownOperatorInstance,
 )
-from openlineage.client.facet import SourceCodeJobFacet
+from openlineage.client.facet_v2 import source_code_job
 
 
 class BashExtractor(BaseExtractor):
@@ -33,7 +33,7 @@ class BashExtractor(BaseExtractor):
         job_facet: Dict = {}
         if collect_source:
             job_facet = {
-                "sourceCode": SourceCodeJobFacet(
+                "sourceCode": source_code_job.SourceCodeJobFacet(
                     "bash",
                     # We're on worker and should have access to DAG files
                     self.operator.bash_command,
