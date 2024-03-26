@@ -17,6 +17,7 @@ import io.openlineage.client.OpenLineage.InputDataset;
 import io.openlineage.client.OpenLineage.OutputDataset;
 import io.openlineage.client.OpenLineage.RunEvent;
 import io.openlineage.client.OpenLineage.RunEvent.EventType;
+import io.openlineage.client.OpenLineage.RunFacet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,6 +82,41 @@ public class DatabricksIntegrationTest {
 
     assertThat(inputDataset.getNamespace()).isEqualTo("dbfs");
     assertThat(inputDataset.getName()).isEqualTo("/user/hive/warehouse/temp");
+
+    // test DatabricksEnvironmentFacetBuilder handler
+    RunEvent eventWithDatabricksProperties =
+        runEvents.stream()
+            .filter(
+                r ->
+                    r.getRun()
+                        .getFacets()
+                        .getAdditionalProperties()
+                        .containsKey("environment-properties"))
+            .findFirst()
+            .get();
+
+    RunFacet environmentFacet =
+        eventWithDatabricksProperties
+            .getRun()
+            .getFacets()
+            .getAdditionalProperties()
+            .get("environment-properties");
+
+    Map<String, Object> properties =
+        (Map<String, Object>)
+            environmentFacet.getAdditionalProperties().get("environment-properties");
+
+    assertThat(properties.get("spark.databricks.job.type")).isEqualTo("python");
+
+    List<Object> mounts = (List<Object>) properties.get("mountPoints");
+
+    assertThat(mounts).isNotEmpty();
+    Map<String, String> mountInfo = (Map<String, String>) mounts.get(0);
+
+    assertThat(mountInfo).containsKeys("mountPoint", "source");
+
+    assertThat(mountInfo.get("mountPoint")).startsWith("/databricks");
+    assertThat(mountInfo.get("source")).startsWith("databricks");
   }
 
   @Test

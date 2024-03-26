@@ -52,7 +52,7 @@ public class DatabricksUtils {
   public static final String CLUSTER_NAME = "openlineage-test-cluster";
   public static final Map<String, String> PLATFORM_VERSIONS =
       Stream.of(
-              new AbstractMap.SimpleEntry<>("3.4.1", "13.3.x-scala2.12"),
+              new AbstractMap.SimpleEntry<>("3.4.2", "13.3.x-scala2.12"),
               new AbstractMap.SimpleEntry<>("3.5.0", "14.2.x-scala2.12"))
           .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   public static final String NODE_TYPE = "Standard_DS3_v2";
@@ -204,9 +204,10 @@ public class DatabricksUtils {
 
   private static String getSparkPlatformVersion() {
     if (!PLATFORM_VERSIONS.containsKey(System.getProperty(SPARK_VERSION))) {
-      log.error("Unsupported spark_version for databricks test");
+      log.error("Unsupported spark_version for databricks test {}", SPARK_VERSION);
     }
 
+    log.info("Databricks version {}", PLATFORM_VERSIONS.get(System.getProperty(SPARK_VERSION)));
     return PLATFORM_VERSIONS.get(System.getProperty(SPARK_VERSION));
   }
 
@@ -214,7 +215,7 @@ public class DatabricksUtils {
   private static void uploadOpenlineageJar(WorkspaceClient workspace) {
     Path jarFile =
         Files.list(Paths.get("../build/libs/"))
-            .filter(p -> p.getFileName().toString().startsWith("openlineage-spark-"))
+            .filter(p -> p.getFileName().toString().startsWith("openlineage-spark_"))
             .filter(p -> p.getFileName().toString().endsWith("jar"))
             .findAny()
             .orElseThrow(() -> new RuntimeException("openlineage-spark jar not found"));
