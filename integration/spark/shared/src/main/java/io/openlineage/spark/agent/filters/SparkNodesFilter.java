@@ -23,6 +23,10 @@ public class SparkNodesFilter implements EventFilter {
   private static final List<String> filterNodes =
       Arrays.asList(
           "org.apache.spark.sql.catalyst.plans.logical.ShowTables",
+          "org.apache.spark.sql.catalyst.plans.logical.ShowViews",
+          "org.apache.spark.sql.catalyst.plans.logical.ShowFunctions",
+          "org.apache.spark.sql.catalyst.plans.logical.ShowNamespaces",
+          "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
           "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
           "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
           Project.class.getCanonicalName(),
