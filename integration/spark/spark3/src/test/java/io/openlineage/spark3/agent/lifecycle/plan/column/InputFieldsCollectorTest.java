@@ -13,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.openlineage.client.dataset.namespace.resolver.DatasetNamespaceCombinedResolver;
 import io.openlineage.client.utils.DatasetIdentifier;
 import io.openlineage.spark.agent.lifecycle.Rdds;
 import io.openlineage.spark.agent.lifecycle.SparkOpenLineageExtensionVisitorWrapper;
@@ -22,6 +23,7 @@ import io.openlineage.spark.agent.util.PathUtils;
 import io.openlineage.spark.agent.util.PlanUtils;
 import io.openlineage.spark.agent.util.ScalaConversionUtils;
 import io.openlineage.spark.api.OpenLineageContext;
+import io.openlineage.spark.api.SparkOpenLineageConfig;
 import io.openlineage.spark3.agent.utils.DataSourceV2RelationDatasetExtractor;
 import java.net.URI;
 import java.util.Arrays;
@@ -74,6 +76,8 @@ class InputFieldsCollectorTest {
   void setup() {
     when(context.getBuilder()).thenReturn(builder);
     when(context.getOlContext()).thenReturn(openLineageContext);
+    when(context.getNamespaceResolver())
+        .thenReturn(new DatasetNamespaceCombinedResolver(new SparkOpenLineageConfig()));
     when(context.getEvent()).thenReturn(event);
     when(attributeReference.exprId()).thenReturn(exprId);
     when(attributeReference.name()).thenReturn(SOME_NAME);

@@ -18,15 +18,12 @@ import io.openlineage.spark.agent.util.PlanUtils;
 import io.openlineage.spark.agent.util.ScalaConversionUtils;
 import io.openlineage.spark3.agent.utils.DataSourceV2RelationDatasetExtractor;
 import io.openlineage.sql.SqlMeta;
-import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hadoop.fs.Path;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.catalyst.catalog.CatalogTable;
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation;
@@ -106,14 +103,14 @@ public class InputFieldsCollector {
     } else if (node instanceof DataSourceV2ScanRelation) {
       return extractDatasetIdentifier(context, ((DataSourceV2ScanRelation) node).relation());
     } else if (node instanceof HiveTableRelation) {
-      return extractDatasetIdentifier(((HiveTableRelation) node).tableMeta());
+      return extractDatasetIdentifier(context, ((HiveTableRelation) node).tableMeta());
     } else if (node instanceof LogicalRelation
         && ((LogicalRelation) node).catalogTable().isDefined()) {
-      return extractDatasetIdentifier(((LogicalRelation) node).catalogTable().get());
+      return extractDatasetIdentifier(context, ((LogicalRelation) node).catalogTable().get());
     } else if (node instanceof LogicalRelation
         && (((LogicalRelation) node).relation() instanceof HadoopFsRelation)) {
       HadoopFsRelation relation = (HadoopFsRelation) ((LogicalRelation) node).relation();
-      return extractDatasetIdentifier(relation);
+      return extractDatasetIdentifier(context, relation);
     } else if (node instanceof LogicalRelation
         && BigQueryUtils.hasBigQueryClasses()
         && ((LogicalRelation) node).relation() instanceof BigQueryRelation) {
@@ -124,7 +121,7 @@ public class InputFieldsCollector {
       JDBCRelation relation = (JDBCRelation) ((LogicalRelation) node).relation();
       return extractDatasetIdentifier(context, relation);
     } else if (node instanceof LogicalRDD) {
-      return extractDatasetIdentifier((LogicalRDD) node);
+      return extractDatasetIdentifier(context, (LogicalRDD) node);
     } else if (node instanceof LogicalRelation
         && context
             .getOlContext()
@@ -166,19 +163,19 @@ public class InputFieldsCollector {
                 meta.inTables().stream()
                     .map(
                         table ->
-                            context
-                                .getNamespaceResolver()
-                                .resolve(
-                                    JdbcDatasetUtils.getDatasetIdentifier(
-                                        jdbcUrl, table.qualifiedName(), jdbcProperties)))
+                            JdbcDatasetUtils.getDatasetIdentifier(
+                                jdbcUrl, table.qualifiedName(), jdbcProperties))
+                    .map(dataset -> context.getNamespaceResolver().resolve(dataset))
                     .collect(Collectors.toList()))
         .orElse(Collections.emptyList());
   }
 
-  private static List<DatasetIdentifier> extractDatasetIdentifier(LogicalRDD logicalRDD) {
+  private static List<DatasetIdentifier> extractDatasetIdentifier(
+      ColumnLevelLineageContext context, LogicalRDD logicalRDD) {
     List<RDD<?>> fileLikeRdds = Rdds.findFileLikeRdds(logicalRDD.rdd());
     return PlanUtils.findRDDPaths(fileLikeRdds).stream()
         .map(path -> PathUtils.fromPath(path))
+        .map(dataset -> context.getNamespaceResolver().resolve(dataset))
         .collect(Collectors.toList());
   }
 
@@ -186,37 +183,32 @@ public class InputFieldsCollector {
       ColumnLevelLineageContext context, DataSourceV2Relation relation) {
     return DataSourceV2RelationDatasetExtractor.getDatasetIdentifierExtended(
             context.getOlContext(), relation)
+        .map(dataset -> context.getNamespaceResolver().resolve(dataset))
         .map(Collections::singletonList)
         .orElse(Collections.emptyList());
   }
 
-  private static List<DatasetIdentifier> extractDatasetIdentifier(CatalogTable catalogTable) {
-    URI location = catalogTable.location();
-    if (location == null) {
-      return Collections.emptyList();
-    } else {
-      return Collections.singletonList(
-          new DatasetIdentifier(
-              catalogTable.location().getPath(), PlanUtils.namespaceUri(catalogTable.location())));
-    }
+  private static List<DatasetIdentifier> extractDatasetIdentifier(
+      ColumnLevelLineageContext context, CatalogTable catalogTable) {
+    return context
+        .getOlContext()
+        .getSparkSession()
+        .map(session -> PathUtils.fromCatalogTable(catalogTable, session))
+        .map(dataset -> context.getNamespaceResolver().resolve(dataset))
+        .map(Collections::singletonList)
+        .orElse(Collections.emptyList());
   }
 
   /* Similar to the InsertIntoHadoopFsRelationVisitor and LogicalRelationDatasetBuilder
    * We need to handle a HadoopFsRelation by extracting that paths it traverses
    * to identify the datasets being used.
    */
-  private static List<DatasetIdentifier> extractDatasetIdentifier(HadoopFsRelation relation) {
-    List<DatasetIdentifier> inputDatasets = new ArrayList<DatasetIdentifier>();
-    List<Path> paths =
-        ScalaConversionUtils.fromSeq(relation.location().rootPaths()).stream()
-            .collect(Collectors.toList());
-
-    for (Path p : paths) {
-      String namespace = PlanUtils.namespaceUri(p.toUri());
-      inputDatasets.add(new DatasetIdentifier(p.toUri().getPath(), namespace));
-    }
-
-    return inputDatasets;
+  private static List<DatasetIdentifier> extractDatasetIdentifier(
+      ColumnLevelLineageContext context, HadoopFsRelation relation) {
+    return ScalaConversionUtils.fromSeq(relation.location().rootPaths()).stream()
+        .map(PathUtils::fromPath)
+        .map(dataset -> context.getNamespaceResolver().resolve(dataset))
+        .collect(Collectors.toList());
   }
 
   private static List<DatasetIdentifier> extractExtensionDatasetIdentifier(
