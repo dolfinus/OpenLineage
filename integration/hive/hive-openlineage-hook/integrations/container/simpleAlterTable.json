@@ -1,0 +1,58 @@
+{
+  "eventType": "COMPLETE",
+  "run": {
+    "facets": {
+      "processing_engine": {
+        "version": "3.1.3",
+        "name": "hive"
+      },
+      "hive_properties": {
+        "properties": {
+          "hive.execution.engine": "mr"
+        }
+      }
+    }
+  },
+  "job": {
+    "namespace": "default",
+    "name": "${json-unit.any-string}.test.t1",
+    "facets": {
+      "sql": {
+        "query": "${json-unit.any-string}"
+      }
+    }
+  },
+  "inputs": [],
+  "outputs": [
+    {
+      "namespace": "hive://localhost:9083",
+      "name": "test.t2",
+      "facets": {
+        "lifecycleStateChange": {
+          "lifecycleStateChange": "ALTER"
+        },
+        "schema": {
+          "fields": [
+            {
+              "name": "a",
+              "type": "int"
+            },
+            {
+              "name": "b",
+              "type": "date"
+            }
+          ]
+        },
+        "symlinks": {
+          "identifiers": [
+            {
+              "namespace": "file",
+              "name": "/opt/hive/data/warehouse/test.db/t1",
+              "type": "LOCATION"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

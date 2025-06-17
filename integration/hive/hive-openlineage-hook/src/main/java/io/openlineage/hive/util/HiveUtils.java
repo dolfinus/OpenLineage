@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import lombok.SneakyThrows;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -18,6 +19,7 @@ import org.apache.hadoop.hive.ql.QueryState;
 import org.apache.hadoop.hive.ql.lib.Node;
 import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.ql.metadata.InvalidTableException;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.parse.ASTNode;
 import org.apache.hadoop.hive.ql.parse.ExplainConfiguration;
@@ -30,10 +32,12 @@ import org.apache.hadoop.hive.ql.parse.SemanticException;
 
 public class HiveUtils {
 
-  public static Table getTable(Configuration conf, String dbName, String tableName) {
+  public static Optional<Table> getTable(Configuration conf, String dbName, String tableName) {
     HiveConf hiveConf = new HiveConf(conf, HiveConf.class);
     try {
-      return Hive.get(hiveConf).getTable(dbName, tableName);
+      return Optional.of(Hive.get(hiveConf).getTable(dbName, tableName));
+    } catch (InvalidTableException e) {
+      return Optional.empty();
     } catch (HiveException e) {
       throw new IllegalArgumentException(e);
     }

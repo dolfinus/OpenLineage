@@ -34,10 +34,50 @@ public class HiveOpenLineageHook implements ExecuteWithHookContext {
   private static final Set<HookContext.HookType> SUPPORTED_HOOK_TYPES = new HashSet<>();
 
   static {
-    SUPPORTED_OPERATIONS.add(HiveOperation.QUERY);
-    SUPPORTED_OPERATIONS.add(HiveOperation.CREATETABLE_AS_SELECT);
     SUPPORTED_HOOK_TYPES.add(HookType.POST_EXEC_HOOK);
     SUPPORTED_HOOK_TYPES.add(HookType.ON_FAILURE_HOOK);
+
+    SUPPORTED_OPERATIONS.add(HiveOperation.QUERY);
+    SUPPORTED_OPERATIONS.add(HiveOperation.CREATETABLE);
+    SUPPORTED_OPERATIONS.add(HiveOperation.CREATETABLE_AS_SELECT);
+    SUPPORTED_OPERATIONS.add(HiveOperation.DROPTABLE);
+    SUPPORTED_OPERATIONS.add(HiveOperation.TRUNCATETABLE);
+    SUPPORTED_OPERATIONS.add(HiveOperation.MSCK);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_ADDCOLS);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_ADDCONSTRAINT);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_ADDPARTS);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_ARCHIVE);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_BUCKETNUM);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_CLUSTER_SORT);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_COMPACT);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_DROPCONSTRAINT);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_DROPPARTS);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_EXCHANGEPARTITION);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_FILEFORMAT);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_LOCATION);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_MERGEFILES);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_OWNER);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_PARTCOLTYPE);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_PROPERTIES);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_RENAME);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_RENAMECOL);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_RENAMEPART);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_REPLACECOLS);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_SERDEPROPERTIES);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_SERIALIZER);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_SKEWED);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_TOUCH);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_UNARCHIVE);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_UPDATECOLUMNS);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_UPDATEPARTSTATS);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTABLE_UPDATETABLESTATS);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERPARTITION_BUCKETNUM);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERPARTITION_FILEFORMAT);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERPARTITION_LOCATION);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERPARTITION_MERGEFILES);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERPARTITION_SERDEPROPERTIES);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERPARTITION_SERIALIZER);
+    SUPPORTED_OPERATIONS.add(HiveOperation.ALTERTBLPART_SKEWED_LOCATION);
   }
 
   public static Set<ReadEntity> getValidInputs(QueryPlan queryPlan) {
@@ -54,6 +94,7 @@ public class HiveOpenLineageHook implements ExecuteWithHookContext {
 
   public static Set<WriteEntity> getValidOutputs(QueryPlan queryPlan) {
     Set<WriteEntity> validOutputs = new HashSet<>();
+    log.error("Output entities for query plan {}: {}", queryPlan, queryPlan.getOutputs());
     for (WriteEntity writeEntity : queryPlan.getOutputs()) {
       Entity.Type entityType = writeEntity.getType();
       if ((entityType == Entity.Type.TABLE || entityType == Entity.Type.PARTITION)
@@ -75,9 +116,7 @@ public class HiveOpenLineageHook implements ExecuteWithHookContext {
           || hookContext.getIndex() == null
           || !SUPPORTED_OPERATIONS.contains(queryPlan.getOperation())
           || queryPlan.isExplain()
-          || queryPlan.getInputs().isEmpty()
           || queryPlan.getOutputs().isEmpty()
-          || validInputs.isEmpty()
           || validOutputs.isEmpty()) {
         return;
       }

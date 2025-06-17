@@ -56,9 +56,9 @@ public class Faceting {
     // isn't readily available in the read/write entities provided by the hook. So we run an
     // explicit call to the Hive Metastore to retrieve the values.
     if (entity.getTable().getSd().getCols().isEmpty()) {
-      entity.setT(
-          HiveUtils.getTable(
-              conf, entity.getTable().getDbName(), entity.getTable().getTableName()));
+        HiveUtils.getTable(
+            conf, entity.getTable().getDbName(), entity.getTable().getTableName())
+            .ifPresent(table -> entity.setT(table));
     }
   }
 

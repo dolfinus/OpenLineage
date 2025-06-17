@@ -173,14 +173,6 @@ public class ColumnLevelLineageTests extends ContainerHiveTestBase {
   }
 
   @Test
-  void simpleInsertValues() {
-    createManagedHiveTable("t1", "a int, b string");
-    runHiveQuery("INSERT INTO t1 VALUES(99, 'abcd')");
-    assertThat(mockServerClient.retrieveRecordedRequests(request().withPath("/api/v1/lineage")))
-        .isEmpty();
-  }
-
-  @Test
   void simpleInsertFromTable() {
     createManagedHiveTable("t1", "a int, b string");
     createManagedHiveTable("t2", "a int, b string");
